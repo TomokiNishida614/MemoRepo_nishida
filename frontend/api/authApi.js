@@ -14,3 +14,12 @@ export async function register({ userName, mailAddress, password, passwordConfir
   });
   return response.data;
 }
+
+export async function login({ mailAddress, password }) {
+  const response = await client.post('/auth/login', {
+    requestId: generateRequestId(),
+    mailAddress,
+    password,
+  });
+  return response.data;
+}
