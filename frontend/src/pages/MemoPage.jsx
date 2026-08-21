@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { getUserName, clearAuth } from '../../api/authStorage';
+import { getUserName, clearAuth } from '../api/authStorage';
 
 export default function MemoPage() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../../api/authApi';
-import { saveAuth } from '../../api/authStorage';
+import { login } from '../api/authApi';
+import { saveAuth } from '../api/authStorage';
 
 export default function LoginPage() {
   const navigate = useNavigate();
