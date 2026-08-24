@@ -12,6 +12,7 @@ import com.example.backend.security.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Service
 public class UserService {
@@ -19,13 +20,13 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil){
-        this.userRepository=userRepository;
-        this.passwordEncoder=passwordEncoder;
-        this.jwtUtil=jwtUtil;
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
-    public UserResponseData register(RegisterRequest request){
+    public UserResponseData register(RegisterRequest request) {
         // password と password_confirm の一致チェック（フィールド横断のためService層で実施）
         if (!request.getPassword().equals(request.getPasswordConfirm())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
@@ -42,13 +43,11 @@ public class UserService {
         User user = new User(
                 request.getUserName(),
                 request.getMailAddress(),
-                passwordEncoder.encode(request.getPassword())
-        );
+                passwordEncoder.encode(request.getPassword()));
         User saved = userRepository.save(user);
 
         return new UserResponseData(
-                saved.getUserId(), saved.getUserName(), saved.getMailAddress(), saved.getCreatedAt()
-        );
+                saved.getUserId(), saved.getUserName(), saved.getMailAddress(), saved.getCreatedAt());
     }
 
     public LoginResponseData login(LoginRequest request) {
@@ -64,7 +63,15 @@ public class UserService {
         String token = jwtUtil.generateToken(user.getUserId());
 
         return new LoginResponseData(
-                token, user.getUserId(), user.getUserName(), jwtUtil.getExpirationSeconds()
-        );
+                token, user.getUserId(), user.getUserName(), jwtUtil.getExpirationSeconds());
+    }
+
+    public UserResponseData getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "AUTH_ERROR",
+                        "ユーザー情報が見つかりません"));
+
+        return new UserResponseData(
+                user.getUserId(), user.getUserName(), user.getMailAddress(), user.getCreatedAt());
     }
 }
