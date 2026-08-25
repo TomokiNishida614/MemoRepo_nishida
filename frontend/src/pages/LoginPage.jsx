@@ -53,47 +53,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: '40px auto', padding: 24, border: '1px solid #ddd', borderRadius: 16 }}>
-      <h1 style={{ textAlign: 'center' }}>ログイン</h1>
+    <div className="page page--narrow">
+      <div className="card">
+        <h1 className="card__title">ログイン</h1>
 
-      {serverError && (
-        <div style={{ color: 'red', marginBottom: 16, textAlign: 'center' }}>{serverError}</div>
-      )}
+        {serverError && <div className="alert alert--error">{serverError}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <label>メールアドレス</label>
-          <input
-            type="text"
-            name="mailAddress"
-            value={form.mailAddress}
-            onChange={handleChange}
-            style={{ width: '100%', padding: 8 }}
-          />
-          {errors.mailAddress && <div style={{ color: 'red', fontSize: 12 }}>{errors.mailAddress}</div>}
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label className="field__label">メールアドレス</label>
+            <input
+              type="text"
+              name="mailAddress"
+              className="field__input"
+              value={form.mailAddress}
+              onChange={handleChange}
+            />
+            {errors.mailAddress && <div className="field__error">{errors.mailAddress}</div>}
+          </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <label>パスワード</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            style={{ width: '100%', padding: 8 }}
-          />
-          {errors.password && <div style={{ color: 'red', fontSize: 12 }}>{errors.password}</div>}
-        </div>
+          <div className="field">
+            <label className="field__label">パスワード</label>
+            <input
+              type="password"
+              name="password"
+              className="field__input"
+              value={form.password}
+              onChange={handleChange}
+            />
+            {errors.password && <div className="field__error">{errors.password}</div>}
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <button type="submit" disabled={submitting} style={{ width: '100%', padding: 10 }}>
+          <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
             {submitting ? 'ログイン中...' : 'ログイン'}
           </button>
-          <span>
+
+          <div className="link-line">
             新規登録は<Link to="/register">こちら</Link>
-          </span>
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
