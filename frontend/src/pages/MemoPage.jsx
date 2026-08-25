@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserName, clearAuth } from '../api/authStorage';
-import { listMemos } from '../api/memoApi';
+import { listMemos, createMemo, deleteMemo } from '../api/memoApi';
+
+const IMPORTANCE_OPTIONS = ['高', '中', '低'];
+
+// datetime-local用のyyyy-MM-dd形式（今日以降しか選べないようにmin属性に使う）
+function todayForDataInput() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 10);
+}
 
 export default function MemoPage() {
   const navigate = useNavigate();
@@ -9,7 +18,15 @@ export default function MemoPage() {
 
   const [memos, setMemos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [listError, setListError] = useState('');
+
+  const [form, setForm] = useState({ title: '', content: '', importance: '', postingDeadline: '' });
+  const [formErrors, setFormErrors] = useState({});
+  const [formServerError, setFormServerError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     fetchMemos();
@@ -17,18 +34,17 @@ export default function MemoPage() {
 
   async function fetchMemos() {
     setLoading(true);
-    setError('');
+    setListError('');
     try {
       const result = await listMemos();
       setMemos(result.data.memos);
     } catch (err) {
       if (err.response?.status === 401) {
-        // トークン切れなどでサーバーに拒否された場合はログイン画面へ
         clearAuth();
         navigate('/login');
         return;
       }
-      setError('メモ一覧の取得に失敗しました。');
+      setListError('メモ一覧の取得に失敗しました。');
     } finally {
       setLoading(false);
     }
@@ -39,9 +55,94 @@ export default function MemoPage() {
     navigate('/login');
   }
 
+  function handleFormChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function validateForm() {
+    const errors = {};
+
+    if (!form.title.trim()) {
+      errors.title = 'タイトルを入力してください';
+    } else if (form.title.length > 10) {
+      errors.title = 'タイトルは10文字以内で入力してください';
+    }
+
+    if (!form.content.trim()) {
+      errors.content = '本文を入力してください';
+    } else if (form.content.length > 200) {
+      errors.content = '本文は200文字以内で入力してください';
+    }
+
+    if (!form.importance) {
+      errors.importance = '重要度を選択してください';
+    }
+
+    if (!form.postingDeadline) {
+      errors.postingDeadline = '掲載期限を選択してください';
+    } else if (form.postingDeadline < todayForDataInput()) {
+      errors.postingDeadline = '過去の日時は選択できません。現在より後の日時を選択してください';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    setFormServerError('');
+
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+    try {
+      await createMemo({
+        ...form,
+        postingDeadline: `${form.postingDeadline}T23:59:59`
+      });
+      setForm({ title: '', content: '', importance: '', postingDeadline: '' });
+      setFormErrors({});
+      await fetchMemos();
+    } catch (err) {
+      if (err.response?.data?.message) {
+        setFormServerError(err.response.data.message);
+      } else {
+        setFormServerError('メモの作成に失敗しました。');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleClear() {
+    setForm({ title: '', content: '', importance: '', postingDeadline: '' });
+    setFormErrors({});
+    setFormServerError('');
+  }
+
+  async function handleDelete(memoId) {
+    if (!window.confirm('本当に削除しますか？')) return;
+
+    setDeleteError('');
+    setDeletingId(memoId);
+    try {
+      await deleteMemo(memoId);
+      await fetchMemos();
+    } catch (err) {
+      if (err.response?.data?.message) {
+        setDeleteError(err.response.data.message);
+      } else {
+        setDeleteError('メモの削除に失敗しました。');
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   function formatDeadline(isoString) {
     const d = new Date(isoString);
-    return d.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
   }
 
   return (
@@ -51,16 +152,74 @@ export default function MemoPage() {
         <button onClick={handleLogout}>ログアウト</button>
       </div>
 
-      <div style={{ padding: 16, border: '1px dashed #ccc', borderRadius: 8, marginBottom: 32, color: '#888', textAlign: 'center' }}>
-        メモ作成フォームは次のブランチで実装します
-      </div>
+      <h2>メモ作成</h2>
+      {formServerError && <div style={{ color: 'red', marginBottom: 12 }}>{formServerError}</div>}
+
+      <form onSubmit={handleCreate} style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 12 }}>
+          <label>タイトル</label>
+          <input
+            type="text"
+            name="title"
+            value={form.title}
+            onChange={handleFormChange}
+            style={{ width: '100%', padding: 8 }}
+          />
+          {formErrors.title && <div style={{ color: 'red', fontSize: 12 }}>{formErrors.title}</div>}
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label>本文</label>
+          <textarea
+            name="content"
+            value={form.content}
+            onChange={handleFormChange}
+            rows={4}
+            style={{ width: '100%', padding: 8 }}
+          />
+          {formErrors.content && <div style={{ color: 'red', fontSize: 12 }}>{formErrors.content}</div>}
+        </div>
+
+        <div style={{ display: 'flex', gap: 24, marginBottom: 20 }}>
+          <div>
+            <label>重要度</label><br />
+            <select name="importance" value={form.importance} onChange={handleFormChange}>
+              <option value="">-</option>
+              {IMPORTANCE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+            {formErrors.importance && <div style={{ color: 'red', fontSize: 12 }}>{formErrors.importance}</div>}
+          </div>
+
+          <div>
+            <label>掲載期限</label><br />
+            <input
+              type="date"
+              name="postingDeadline"
+              value={form.postingDeadline}
+              min={todayForDataInput()}
+              onChange={handleFormChange}
+            />
+            {formErrors.postingDeadline && <div style={{ color: 'red', fontSize: 12 }}>{formErrors.postingDeadline}</div>}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <button type="button" onClick={handleClear}>クリア</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? '保存中...' : '保存'}
+          </button>
+        </div>
+      </form>
 
       <h2>メモ一覧</h2>
+      {deleteError && <div style={{ color: 'red', marginBottom: 12 }}>{deleteError}</div>}
 
       {loading && <p>読み込み中...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {listError && <p style={{ color: 'red' }}>{listError}</p>}
 
-      {!loading && !error && (
+      {!loading && !listError && (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f0f4ff' }}>
@@ -88,9 +247,13 @@ export default function MemoPage() {
                 <td style={tdStyle}>{memo.userName}</td>
                 <td style={tdStyle}>{formatDeadline(memo.postingDeadline)}</td>
                 <td style={tdStyle}>
-                  {/* 削除APIは次のブランチで実装。is_ownerがtrueの行だけ将来ボタンを出す想定 */}
                   {memo.isOwner ? (
-                    <button disabled title="削除APIは未実装です">削除</button>
+                    <button
+                      onClick={() => handleDelete(memo.memoId)}
+                      disabled={deletingId === memo.memoId}
+                    >
+                      {deletingId === memo.memoId ? '削除中...' : '削除'}
+                    </button>
                   ) : (
                     '-'
                   )}
