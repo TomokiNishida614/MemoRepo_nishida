@@ -77,74 +77,45 @@ export default function RegisterPage() {
     }
 
     return (
-        <div style={{ maxWidth: 400, margin: '40px auto', padding: 24, border: '1px solid #ddd', borderRadius: 16 }}>
-            <h1 style={{ textAlign: 'center' }}>新規登録</h1>
-            {serverError && (
-                <div style={{ color: 'red', marginBottom: 16, textAlign: 'center' }}>{serverError}</div>
-            )}
+        <div className="page page--narrow">
+            <div className="card">
+                <h1 className="card__title">新規登録</h1>
 
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: 16 }}>
-                    <label>ユーザー名</label>
-                    <input
-                        type='text'
-                        name='userName'
-                        placeholder='ユーザー名'
-                        value={form.userName}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: 8 }}
-                    />
-                    {errors.userName && <div style={{ color: 'red', fontSize: 12 }}>{errors.userName}</div>}
-                </div>
+                {serverError && <div className="alert alert--error">{serverError}</div>}
 
-                <div style={{ marginBottom: 16 }}>
-                    <label>メールアドレス</label>
-                    <input
-                        type="text"
-                        name="mailAddress"
-                        placeholder="user@example.com"
-                        value={form.mailAddress}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: 8 }}
-                    />
-                    {errors.mailAddress && <div style={{ color: 'red', fontSize: 12 }}>{errors.mailAddress}</div>}
-                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="field">
+                        <label className="field__label">ユーザー名</label>
+                        <input type="text" name="userName" className="field__input" value={form.userName} onChange={handleChange} />
+                        {errors.userName && <div className="field__error">{errors.userName}</div>}
+                    </div>
 
-                <div style={{ marginBottom: 16 }}>
-                    <label>パスワード</label>
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: 8 }}
-                    />
-                    {errors.password && <div style={{ color: 'red', fontSize: 12 }}>{errors.password}</div>}
-                </div>
+                    <div className="field">
+                        <label className="field__label">メールアドレス</label>
+                        <input type="text" name="mailAddress" className="field__input" placeholder="user@example.com" value={form.mailAddress} onChange={handleChange} />
+                        {errors.mailAddress && <div className="field__error">{errors.mailAddress}</div>}
+                    </div>
 
-                <div style={{ marginBottom: 24 }}>
-                    <label>パスワード確認用</label>
-                    <input
-                        type="password"
-                        name="passwordConfirm"
-                        placeholder="password（確認）"
-                        value={form.passwordConfirm}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: 8 }}
-                    />
-                    {errors.passwordConfirm && <div style={{ color: 'red', fontSize: 12 }}>{errors.passwordConfirm}</div>}
-                </div>
+                    <div className="field">
+                        <label className="field__label">パスワード</label>
+                        <input type="password" name="password" className="field__input" value={form.password} onChange={handleChange} />
+                        {errors.password && <div className="field__error">{errors.password}</div>}
+                    </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Link to="/login">
-                        <button type="button">戻る</button>
-                    </Link>
-                    <button type="submit" disabled={submitting}>
-                        {submitting ? '登録中...' : '登録'}
-                    </button>
-                </div>
-            </form>
+                    <div className="field">
+                        <label className="field__label">パスワード確認用</label>
+                        <input type="password" name="passwordConfirm" className="field__input" value={form.passwordConfirm} onChange={handleChange} />
+                        {errors.passwordConfirm && <div className="field__error">{errors.passwordConfirm}</div>}
+                    </div>
+
+                    <div className="btn-row">
+                        <Link to="/login" className="btn btn--secondary">戻る</Link>
+                        <button type="submit" className="btn btn--primary" disabled={submitting}>
+                            {submitting ? '登録中...' : '登録'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 
