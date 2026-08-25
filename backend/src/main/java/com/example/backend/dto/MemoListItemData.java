@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 public class MemoListItemData {
@@ -31,5 +32,7 @@ public class MemoListItemData {
     public String getContent() { return content; }
     public String getImportance() { return importance; }
     public LocalDateTime getPostingDeadline() { return postingDeadline; }
+
+    @JsonProperty("isOwner")
     public boolean isOwner() { return isOwner; }
 }
